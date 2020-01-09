@@ -68,6 +68,10 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="..\common\HttpRequest.cpp" />
+    <ClCompile Include="..\common\ldap\cldap_entry.cpp" />
+    <ClCompile Include="..\common\ldap\cldap_mod.cpp" />
+    <ClCompile Include="..\common\ldap\cldap_server.cpp" />
+    <ClCompile Include="..\common\ldap\LdapUtils.cpp" />
     <ClCompile Include="..\common\TimeZoneHelper.cpp" />
     <ClCompile Include="..\common\Utility.cpp" />
     <ClCompile Include="Application.cpp" />
@@ -97,6 +101,12 @@
     <ClInclude Include="..\common\jwt-cpp\base.h" />
     <ClInclude Include="..\common\jwt-cpp\jwt.h" />
     <ClInclude Include="..\common\jwt-cpp\picojson.h" />
+    <ClInclude Include="..\common\ldap\cldap.h" />
+    <ClInclude Include="..\common\ldap\cldap_entry.h" />
+    <ClInclude Include="..\common\ldap\cldap_mod.h" />
+    <ClInclude Include="..\common\ldap\cldap_server.h" />
+    <ClInclude Include="..\common\ldap\cldap_types.h" />
+    <ClInclude Include="..\common\ldap\LdapUtils.h" />
     <ClInclude Include="..\common\os\chown.hpp" />
     <ClInclude Include="..\common\os\linux.hpp" />
     <ClInclude Include="..\common\os\net.hpp" />
@@ -125,6 +135,7 @@
     <ClInclude Include="User.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\common\ldap\Makefile" />
     <None Include="..\common\Makefile" />
     <None Include="appsvc.json">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

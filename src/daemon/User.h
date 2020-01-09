@@ -58,5 +58,9 @@ public:
 	void delUser(std::string name);
 private:
 	std::map<std::string, std::shared_ptr<User>> m_users;
+	bool m_ldapAuthen;
+	std::string m_ldapUri;
+	std::string m_ldapBaseDn;
+	std::string m_ldapBindDn;
 	std::recursive_mutex m_mutex;
 };

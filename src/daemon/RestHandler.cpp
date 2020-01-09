@@ -10,6 +10,7 @@
 #include "PrometheusRest.h"
 #include "Configuration.h"
 #include "ResourceCollection.h"
+#include "../common/ldap/LdapUtils.h"
 #include "../common/HttpRequest.h"
 #include "../common/Utility.h"
 #include "../common/jwt-cpp/jwt.h"
@@ -322,6 +323,7 @@ std::string RestHandler::verifyToken(const HttpRequest& message)
 			.with_claim(HTTP_HEADER_JWT_name, userName);
 		verifier.verify(decoded_token);
 
+		LdapUtils ldap("","","");
 		return std::move(userName.as_string());
 	}
 	else

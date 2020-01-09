@@ -46,6 +46,18 @@
     <ClCompile Include="Label.cpp" />
     <ClCompile Include="HealthCheckTask.cpp" />
     <ClCompile Include="PersistManager.cpp" />
+    <ClCompile Include="..\common\ldap\cldap_entry.cpp">
+      <Filter>common\ldap</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\ldap\cldap_mod.cpp">
+      <Filter>common\ldap</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\ldap\cldap_server.cpp">
+      <Filter>common\ldap</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\ldap\LdapUtils.cpp">
+      <Filter>common\ldap</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Configuration.h" />
@@ -119,12 +131,33 @@
     <ClInclude Include="Label.h" />
     <ClInclude Include="HealthCheckTask.h" />
     <ClInclude Include="PersistManager.h" />
+    <ClInclude Include="..\common\ldap\cldap.h">
+      <Filter>common\ldap</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\ldap\cldap_entry.h">
+      <Filter>common\ldap</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\ldap\cldap_mod.h">
+      <Filter>common\ldap</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\ldap\cldap_server.h">
+      <Filter>common\ldap</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\ldap\cldap_types.h">
+      <Filter>common\ldap</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\ldap\LdapUtils.h">
+      <Filter>common\ldap</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="appsvc.json" />
     <None Include="Makefile" />
     <None Include="..\common\Makefile">
       <Filter>common</Filter>
+    </None>
+    <None Include="..\common\ldap\Makefile">
+      <Filter>common\ldap</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -145,6 +178,9 @@
     </Filter>
     <Filter Include="application">
       <UniqueIdentifier>{2a00d72f-3f11-477e-804f-35a80990a09d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common\ldap">
+      <UniqueIdentifier>{cb8e71d5-347a-4a50-ae2e-b5f32b7c806e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

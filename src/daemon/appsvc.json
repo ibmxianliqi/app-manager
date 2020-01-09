@@ -21,20 +21,28 @@
     }
   ],
   "JWT": {
-    "admin": {
-      "key": "Admin123",
-      "roles": [ "manage", "view" ],
-      "locked": false
+    "users": {
+      "admin": {
+        "key": "Admin123",
+        "roles": [ "manage", "view" ],
+        "locked": false
+      },
+      "user": {
+        "key": "password",
+        "roles": [ "view" ],
+        "locked": false
+      },
+      "test": {
+        "key": "test",
+        "roles": [],
+        "locked": true
+      }
     },
-    "user": {
-      "key": "password",
-      "roles": [ "view" ],
-      "locked": false
-    },
-    "test": {
-      "key": "test",
-      "roles": [],
-      "locked": true
+    "auth_method": "local",
+    "ldap": {
+      "ldap_uri": "ldap://127.0.0.1:389",
+      "base_dn": "dc=asia,dc=com",
+      "bind_dn": "cn={user},ou=app,dc=asia,dc=com"
     }
   },
   "Labels": {
