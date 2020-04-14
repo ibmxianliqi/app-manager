@@ -1,15 +1,15 @@
 #include <chrono>
-#include <boost/algorithm/string_regex.hpp>
+#include <regex>
 #include <cpprest/filestream.h>
 #include <cpprest/http_listener.h> // HTTP server 
 #include <cpprest/http_client.h>
 #include "RestHandler.h"
-#include "../common/Utility.h"
-#include "../prom_exporter/counter.h"
-#include "../prom_exporter/gauge.h"
 #include "PrometheusRest.h"
 #include "Configuration.h"
 #include "ResourceCollection.h"
+#include "User.h"
+#include "Label.h"
+#include "Application.h"
 #include "../common/HttpRequest.h"
 #include "../common/Utility.h"
 #include "../common/jwt-cpp/jwt.h"
@@ -17,9 +17,9 @@
 #include "../common/os/chown.hpp"
 #include "../common/HttpRequest.h"
 #include "../prom_exporter/text_serializer.h"
-#include "User.h"
-#include "Label.h"
-#include "Application.h"
+#include "../common/Utility.h"
+#include "../prom_exporter/counter.h"
+#include "../prom_exporter/gauge.h"
 
 RestHandler::RestHandler(const std::string& ipaddress, int port)
 	:m_listenAddress(ipaddress.empty() ? std::string("0.0.0.0") : ipaddress)
@@ -236,7 +236,7 @@ void RestHandler::handleRest(const http_request& message, const std::map<std::st
 	bool findRest = false;
 	for (const auto& kvp : restFunctions)
 	{
-		if (path == kvp.first || boost::regex_match(path, boost::regex(kvp.first)))
+		if (path == kvp.first || std::regex_match(path, std::regex(kvp.first)))
 		{
 			findRest = true;
 			stdFunction = kvp.second;

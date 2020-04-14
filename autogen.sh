@@ -117,3 +117,4 @@ cd build
 make -j 4
 make install
 gcc -v
+\cp -f /usr/local/lib64/libstdc++.so.6* /usr/lib64

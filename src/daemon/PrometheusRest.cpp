@@ -1,9 +1,9 @@
-#include <boost/algorithm/string_regex.hpp>
+#include <regex>
 #include "PrometheusRest.h"
-#include "../prom_exporter/counter.h"
-#include "../prom_exporter/registry.h"
 #include "ResourceCollection.h"
 #include "../common/Utility.h"
+#include "../prom_exporter/counter.h"
+#include "../prom_exporter/registry.h"
 #include "../prom_exporter/text_serializer.h"
 
 std::shared_ptr<PrometheusRest> PrometheusRest::m_instance;
@@ -114,7 +114,7 @@ void PrometheusRest::handleRest(const http_request& message, const std::map<std:
 	bool findRest = false;
 	for (const auto& kvp : restFunctions)
 	{
-		if (path == kvp.first || boost::regex_match(path, boost::regex(kvp.first)))
+		if (path == kvp.first || std::regex_match(path, std::regex(kvp.first)))
 		{
 			findRest = true;
 			stdFunction = kvp.second;
