@@ -44,12 +44,14 @@ fi
 gem install fpm
 
 # cpprestsdk (use -DBUILD_SHARED_LIBS=0 for static link):
+# need export BOOST_LIBRARYDIR & BOOST_INCLUDEDIR before build
 # https://stackoverflow.com/questions/49877907/cpp-rest-sdk-in-centos-7
-git clone https://github.com/microsoft/cpprestsdk.git cpprestsdk
+# build fix https://github.com/microsoft/cpprestsdk/blob/04917da60935b7f48e178ddd1c84b55546f9aa40/Release/src/json/json_parsing.cpp
+git clone --branch 9d8f544001cb74544de6dc8c565592f7e2626d6e https://github.com/microsoft/cpprestsdk.git cpprestsdk
 cd cpprestsdk
 git submodule update --init
 cd Release
-$CMAKE .. -DCMAKE_BUILD_TYPE=Release -DBOOST_ROOT=/usr/local -DBUILD_SHARED_LIBS=1 -DCMAKE_CXX_FLAGS="-Wno-error=cast-align -Wno-error=conversion"
+$CMAKE .. -DCMAKE_BUILD_TYPE=Release -DBOOST_ROOT=/usr/local -DBUILD_SHARED_LIBS=1 -DCMAKE_CXX_FLAGS="-Wno-error=cast-align -Wno-error=conversion -Wno-error=missing-field-initializers"
 make
 make install
 ls -al /usr/local/lib*/libcpprest.so
@@ -118,3 +120,4 @@ make -j 4
 make install
 gcc -v
 \cp -f /usr/local/lib64/libstdc++.so.6* /usr/lib64
+

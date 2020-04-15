@@ -57,7 +57,7 @@ pid_t MonitoredProcess::spawn(ACE_Process_Options & options)
 	// Start thread to read stdout/stderr stream
 	if (m_enableBuildinThread) m_thread = std::make_unique<std::thread>(std::bind(&MonitoredProcess::runPipeReaderThread, this));
 
-	// close write in parent side (write handler is used for child process in our case)
+	// close write in parent side (write handler is used for child process read)
 	m_pipe->close_write();
 	return rt;
 }
