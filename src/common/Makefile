@@ -2,7 +2,7 @@ include ../../make.def
 TARGET = libcommon.a
 OEXT = o
 
-INCLUDES = -I/usr/local/ace/include/
+INCLUDES = -I/usr/local/ace/include/  -I/usr/local/boost/include
 
 all : format $(TARGET) 
 

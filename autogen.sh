@@ -64,7 +64,8 @@ if [ -f "/usr/bin/yum" ]; then
 	./bootstrap.sh
 	./b2
 	./b2 install --prefix=/usr/local/boost169
-	ls -al /usr/local/boost169/lib*/libboost_system.so.1.69.0
+	ln -s /usr/local/boost169 /usr/local/boost
+	ls -al /usr/local/boost/lib/libboost_system.so.1.69.0
 	cd $ROOTDIR
 fi
 

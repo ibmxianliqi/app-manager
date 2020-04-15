@@ -3,7 +3,7 @@ RELEASE_DIR=./release
 INSTALL_DIR=/opt/${PACKAGE_NAME}
 TMP_DIR=${RELEASE_DIR}${INSTALL_DIR}
 TMP_LIB_DIR=${TMP_DIR}/lib64
-LDPATH=$(LD_LIBRARY_PATH):/usr/local/lib64:/usr/local/lib/:/usr/local/ace/lib/
+LDPATH=$(LD_LIBRARY_PATH):/usr/local/boost/lib:/usr/local/lib64:/usr/local/lib/:/usr/local/ace/lib/
 
 all:
 	echo ${BUILD_TAG}

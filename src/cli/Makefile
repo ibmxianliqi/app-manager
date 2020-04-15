@@ -2,8 +2,8 @@ include ../../make.def
 TARGET = appc
 OEXT = o
 
-INCLUDES = -I/usr/local/include -I/usr/local/ace/include/
-DEP_LIBS = -L/usr/local/ace/lib/ -L/usr/local/lib64/boost -L/usr/local/lib64 -lpthread -lssl -lcrypto -lcpprest -lboost_program_options -lACE -Wl,-Bstatic -llog4cpp -Wl,-Bdynamic
+INCLUDES = -I/usr/local/include -I/usr/local/ace/include -I/usr/local/boost/include
+DEP_LIBS = -L/usr/local/ace/lib/ -L/usr/local/boost/lib -L/usr/local/lib64 -lpthread -lssl -lcrypto -lcpprest -lboost_program_options -lACE -Wl,-Bstatic -llog4cpp -Wl,-Bdynamic
 
 all : $(TARGET) 
 
