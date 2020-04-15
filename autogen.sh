@@ -12,21 +12,32 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
+GCC_VER_GTE49=$(echo `gcc -dumpversion | cut -f1-2 -d.` \>= 4.9 | bc)
+if [ $GCC_VER_GTE49 != "1"]; then
+	# GCC 4.9.4
+	cd $ROOTDIR
+	wget http://www.netgull.com/gcc/releases/gcc-4.9.4/gcc-4.9.4.tar.gz
+	tar zxvf gcc-4.9.4.tar.gz
+	cd gcc-4.9.4
+	./contrib/download_prerequisites
+	mkdir build
+	cd build
+	../configure --enable-checking=release --enable-languages=c,c++ --disable-multilib
+	make -j 4
+	make install
+	gcc -v
+	\cp -f /usr/local/lib64/libstdc++.so.6* /usr/lib64
+fi
+
 CMAKE=
 if [ -f "/usr/bin/yum" ]; then
-	#RHEL
+	# RHEL
 	yum install -y epel-release
 	yum install -y https://centos7.iuscommunity.org/ius-release.rpm
 
 	yum install -y git222 make cmake3 gcc-c++
 	CMAKE=$(which cmake3)
 	yum install -y dos2unix openssl-devel
-
-	yum install -y boost169-devel boost169-static
-	export BOOST_LIBRARYDIR=/usr/lib64/boost169
-	export BOOST_INCLUDEDIR=/usr/include/boost169
-	ln -s /usr/include/boost169/boost /usr/local/include/boost
-	ln -s /usr/lib64/boost169/ /usr/local/lib64/boost
 
 	# https://www.cnblogs.com/fujinzhou/p/5735578.html
 	yum install -y ruby rubygems ruby-devel
@@ -43,6 +54,20 @@ fi
 #install fpm
 gem install fpm
 
+# build boost_1_69_0 on RHEL
+if [ -f "/usr/bin/yum" ]; then
+	# BOOST:
+	# https://www.cnblogs.com/eagle6688/p/5840773.html
+	wget https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.gz
+	tar zxvf boost_1_69_0.tar.gz
+	cd ./boost_1_69_0
+	./bootstrap.sh
+	./b2
+	./b2 install --prefix=/usr/local/boost169
+	ls -al /usr/local/boost169/lib*/libboost_system.so.1.69.0
+	cd $ROOTDIR
+fi
+
 # cpprestsdk (use -DBUILD_SHARED_LIBS=0 for static link):
 # need export BOOST_LIBRARYDIR & BOOST_INCLUDEDIR before build
 # https://stackoverflow.com/questions/49877907/cpp-rest-sdk-in-centos-7
@@ -51,7 +76,7 @@ git clone --branch 9d8f544001cb74544de6dc8c565592f7e2626d6e https://github.com/m
 cd cpprestsdk
 git submodule update --init
 cd Release
-$CMAKE .. -DCMAKE_BUILD_TYPE=Release -DBOOST_ROOT=/usr/local -DBUILD_SHARED_LIBS=1 -DCMAKE_CXX_FLAGS="-Wno-error=cast-align -Wno-error=conversion -Wno-error=missing-field-initializers"
+$CMAKE .. -DCMAKE_BUILD_TYPE=Release -DBOOST_ROOT=/usr/local/boost169 -DBUILD_SHARED_LIBS=1 -DCMAKE_CXX_FLAGS="-Wno-error=cast-align -Wno-error=conversion -Wno-error=missing-field-initializers"
 make
 make install
 ls -al /usr/local/lib*/libcpprest.so
@@ -107,17 +132,4 @@ mv cfssl_linux-amd64 /usr/local/bin/cfssl
 mv cfssljson_linux-amd64 /usr/local/bin/cfssljson
 mv cfssl-certinfo_linux-amd64 /usr/local/bin/cfssl-certinfo
 
-# GCC 4.9.4
-cd $ROOTDIR
-wget http://www.netgull.com/gcc/releases/gcc-4.9.4/gcc-4.9.4.tar.gz
-tar zxvf gcc-4.9.4.tar.gz
-cd gcc-4.9.4
-./contrib/download_prerequisites 
-mkdir build
-cd build
-../configure --enable-checking=release --enable-languages=c,c++ --disable-multilib
-make -j 4
-make install
-gcc -v
-\cp -f /usr/local/lib64/libstdc++.so.6* /usr/lib64
 
