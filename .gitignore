@@ -261,3 +261,4 @@ __pycache__/
 *.pyc
 *.diff
 *.zip
+src/consul_watch/go.sum

@@ -1,6 +1,9 @@
 package main
 
-import "github.com/hashicorp/consul/api"
+import (
+	"github.com/hashicorp/consul/api"
+	"time"
+)
 import "fmt"
 
 func main() {
@@ -20,10 +23,16 @@ func main() {
 		panic(err)
 	}
 
+	queryOpt := makeQueryOptions()
+
 	// Lookup the pair
-	pair, _, err := kv.Get("REDIS_MAXCLIENTS", nil)
+	pair, _, err := kv.Get("REDIS_MAXCLIENTS", queryOpt)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Printf("KV: %v %s\n", pair.Key, pair.Value)
+}
+
+func makeQueryOptions() *api.QueryOptions {
+	return &api.QueryOptions{WaitTime: time.Duration(1 * time.Minute)}
 }
