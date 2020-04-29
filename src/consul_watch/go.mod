@@ -1,0 +1,5 @@
+module watcher
+
+go 1.13
+
+require github.com/hashicorp/consul/api v1.4.0
