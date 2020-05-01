@@ -56,7 +56,7 @@ class Configuration
 		// report status to consul interval
 		int m_reportInterval;
 		int m_scheduleInterval;
-		int m_securitySyncInterval;
+		bool m_enableSecuritySync;
 	};
 public:
 	struct JsonSecurity {

@@ -24,15 +24,15 @@ public:
 private:
 	virtual void reportStatus(int timerId = 0);
 	virtual void refreshSession(int timerId = 0);
-	virtual void schedule(int timerId = 0);
-	virtual void security(int timerId = 0);
+	void schedule();
 
 	web::http::http_response requestHttp(const web::http::method& mtd, const std::string& path, std::map<std::string, std::string> query, std::map<std::string, std::string> header, web::json::value* body);
 	std::string requestSessionId();
 	std::string renewSessionId();
 	std::string getSessionId();
 	void leaderSchedule();
-	void nodeSchedule();
+	void syncNodeTopology();
+	void syncSecurity();
 	bool eletionLeader();
 	bool registerService(const std::string& appName, int port);
 	bool deregisterService(const std::string appName);
@@ -48,11 +48,18 @@ private:
 	std::map<std::string, std::shared_ptr<ConsulNode>> retrieveNode();
 
 private:
+	void watchSecurity();
+	void watchTopology();
+	long long blockQueryKV(const std::string& kvPath, long long lastIndex, int waitSeconds);
+
+private:
 	std::string m_sessionId;
 	int m_ssnRenewTimerId;
 	int m_reportStatusTimerId;
-	int m_scheduleTimerId;
-	int m_securityTimerId;
 	
 	bool m_leader;
+	bool m_threadDestroy;
+	std::unique_ptr<std::thread> m_securityThread;
+	std::unique_ptr<std::thread> m_topologyThread;
+	std::unique_ptr<std::thread> m_scheduleThread;
 };

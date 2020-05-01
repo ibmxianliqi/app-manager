@@ -159,7 +159,7 @@ public:
 #define CONSUL_SESSION_DEFAULT_TTL 30
 #define CONSUL_REPORT_DEFAULT_INTERVAL 15
 #define CONSUL_TOPOLOGY_DEFAULT_INTERVAL 5
-#define CONSUL_SECURITY_SYNC_DEFAULT_INTERVAL 10
+#define CONSUL_SECURITY_SYNC_DEFAULT false
 
 #define JSON_KEY_Description "Description"
 
@@ -195,7 +195,7 @@ public:
 #define JSON_KEY_CONSULE_SESSION_TTL "session_TTL"
 #define JSON_KEY_CONSULE_REPORT_INTERVAL "report_interval"
 #define JSON_KEY_CONSULE_SCHEDULE_INTERVAL "schedule_interval"
-#define JSON_KEY_CONSUL_SECURITY_INTERVAL "enable_consul_security_interval"
+#define JSON_KEY_CONSUL_SECURITY "enable_consul_security"
 #define JSON_KEY_JWT_Users "Users"
 #define JSON_KEY_APP_name "name"
 #define JSON_KEY_APP_user "user"

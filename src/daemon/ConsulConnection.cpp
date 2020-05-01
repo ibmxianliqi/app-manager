@@ -13,21 +13,19 @@
 #include "../common/PerfLog.h"
 
 #define CONSUL_BASE_PATH  "/v1/kv/appmgr/"
-extern ACE_Reactor* m_timerReactor;
 
 ConsulConnection::ConsulConnection()
-	:m_ssnRenewTimerId(0), m_reportStatusTimerId(0), m_scheduleTimerId(0), m_securityTimerId(0), m_leader(0)
+	:m_ssnRenewTimerId(0), m_reportStatusTimerId(0), m_leader(0), m_threadDestroy(false)
 {
-	// override default reactor
-	m_reactor = m_timerReactor;
 }
 
 ConsulConnection::~ConsulConnection()
 {
 	this->cancleTimer(m_ssnRenewTimerId);
 	this->cancleTimer(m_reportStatusTimerId);
-	this->cancleTimer(m_scheduleTimerId);
-	this->cancleTimer(m_securityTimerId);
+	m_threadDestroy = true;
+	if (m_securityThread) m_securityThread->join();
+	if (m_topologyThread) m_topologyThread->join();
 }
 
 std::shared_ptr<ConsulConnection>& ConsulConnection::instance()
@@ -67,7 +65,7 @@ void ConsulConnection::reportStatus(int timerId)
 			}
 		}
 	}
-	catch (const std::exception& ex)
+	catch (const std::exception & ex)
 	{
 		LOG_WAR << fname << " got exception: " << ex.what();
 	}
@@ -80,7 +78,7 @@ void ConsulConnection::reportStatus(int timerId)
 void ConsulConnection::refreshSession(int timerId)
 {
 	const static char fname[] = "ConsulConnection::refreshSession() ";
-	
+
 	try
 	{
 		// check feature enabled
@@ -109,7 +107,7 @@ void ConsulConnection::refreshSession(int timerId)
 		m_sessionId = sessionId;
 		return;
 	}
-	catch (const std::exception& ex)
+	catch (const std::exception & ex)
 	{
 		LOG_WAR << fname << " got exception: " << ex.what();
 	}
@@ -121,7 +119,7 @@ void ConsulConnection::refreshSession(int timerId)
 	m_sessionId.clear();
 }
 
-void ConsulConnection::schedule(int timerId)
+void ConsulConnection::schedule()
 {
 	const static char fname[] = "ConsulConnection::schedule() ";
 
@@ -138,14 +136,8 @@ void ConsulConnection::schedule(int timerId)
 			// Leader's job
 			leaderSchedule();
 		}
-
-		if (Configuration::instance()->getConsul()->m_isNode)
-		{
-			// Node's job
-			nodeSchedule();
-		}
 	}
-	catch (const std::exception& ex)
+	catch (const std::exception & ex)
 	{
 		LOG_WAR << fname << " got exception: " << ex.what();
 	}
@@ -154,20 +146,12 @@ void ConsulConnection::schedule(int timerId)
 		LOG_WAR << fname << " exception";
 	}
 
-	// set next timer
-	if (Configuration::instance()->getConsul()->m_scheduleInterval > 1)
-	{
-		m_scheduleTimerId = this->registerTimer(
-			Configuration::instance()->getConsul()->m_scheduleInterval * 1000L, 0,
-			std::bind(&ConsulConnection::schedule, this, std::placeholders::_1),
-			__FUNCTION__
-		);
-	}
+	std::this_thread::sleep_for(std::chrono::seconds(Configuration::instance()->getConsul()->m_scheduleInterval));
 }
 
-void ConsulConnection::security(int timerId)
+void ConsulConnection::syncSecurity()
 {
-	const static char fname[] = "ConsulConnection::security() ";
+	const static char fname[] = "ConsulConnection::syncSecurity() ";
 
 	try
 	{
@@ -177,14 +161,14 @@ void ConsulConnection::security(int timerId)
 		PerfLog perf(fname);
 
 		static long lastIndex = 0;
-		auto resp = requestHttp(web::http::methods::GET, "/v1/kv/appmgr/security", {}, {}, nullptr);
+		auto resp = requestHttp(web::http::methods::GET, std::string(CONSUL_BASE_PATH).append("security"), {}, {}, nullptr);
 		if (resp.status_code() == web::http::status_codes::OK)
 		{
 			auto respJson = resp.extract_json(true).get();
 			if (!respJson.is_array() || respJson.as_array().size() == 0) return;
 			auto securityJson = respJson.as_array().at(0);
 			if (!HAS_JSON_FIELD(securityJson, "ModifyIndex") || !HAS_JSON_FIELD(securityJson, "Value")) return;
-			
+
 			auto index = GET_JSON_NUMBER_VALUE(securityJson, "ModifyIndex");
 			if (index > lastIndex)
 			{
@@ -203,7 +187,7 @@ void ConsulConnection::security(int timerId)
 			LOG_WAR << fname << "failed with response : " << resp.extract_utf8string(true).get();
 		}
 	}
-	catch (const std::exception& ex)
+	catch (const std::exception & ex)
 	{
 		LOG_WAR << fname << " got exception: " << ex.what();
 	}
@@ -294,9 +278,9 @@ void ConsulConnection::leaderSchedule()
 	}
 }
 
-void ConsulConnection::nodeSchedule()
+void ConsulConnection::syncNodeTopology()
 {
-	const static char fname[] = "ConsulConnection::nodeSchedule() ";
+	const static char fname[] = "ConsulConnection::syncNodeTopology() ";
 
 	auto currentAllApps = Configuration::instance()->getApps();
 	std::shared_ptr<ConsulTopology> newTopology;
@@ -452,7 +436,7 @@ void ConsulConnection::saveSecurity()
 
 	// /appmgr/security
 	std::string path = std::string(CONSUL_BASE_PATH).append("security");
-	
+
 	auto body = Configuration::instance()->getSecurity()->AsJson(false);
 	auto timestamp = std::to_string(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
 	web::http::http_response resp = requestHttp(web::http::methods::PUT, path, { {"flags", timestamp} }, {}, &body);
@@ -829,6 +813,66 @@ std::map<std::string, std::shared_ptr<ConsulNode>> ConsulConnection::retrieveNod
 	return std::move(result);
 }
 
+void ConsulConnection::watchSecurity()
+{
+	const static char fname[] = "ConsulConnection::watchSecurity() ";
+
+	auto self = this->shared_from_this();
+	long long lastIndex = 0;
+	auto path = std::string(CONSUL_BASE_PATH).append("security");
+	while (!m_threadDestroy)
+	{
+		auto newIndex = blockQueryKV(path, lastIndex, 50);
+		if (newIndex > 0 && newIndex != lastIndex)
+		{
+			lastIndex = newIndex;
+			LOG_INF << fname << "fire with index : " << lastIndex;
+			this->syncSecurity();
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
+}
+
+void ConsulConnection::watchTopology()
+{
+	const static char fname[] = "ConsulConnection::watchTopology() ";
+
+	auto self = this->shared_from_this();
+	long long lastIndex = 0;
+	auto path = std::string(CONSUL_BASE_PATH).append("topology/").append(MY_HOST_NAME);
+	while (!m_threadDestroy)
+	{
+		auto newIndex = blockQueryKV(path, lastIndex, 50);
+		if (newIndex > 0 && newIndex != lastIndex)
+		{
+			lastIndex = newIndex;
+			LOG_INF << fname << "fire with index : " << lastIndex;
+			this->syncNodeTopology();
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	}
+}
+
+long long ConsulConnection::blockQueryKV(const std::string& kvPath, long long lastIndex, int waitSeconds)
+{
+	const static char fname[] = "ConsulConnection::blockQueryKV() ";
+
+	auto resp = requestHttp(web::http::methods::GET, kvPath, { {"index", std::to_string(lastIndex)}, {"wait", std::to_string(waitSeconds) + "s"} }, {}, nullptr);
+	if (resp.headers().has("X-Consul-Index"))
+	{
+		auto indexStr = resp.headers()["X-Consul-Index"];
+		if (Utility::isNumber(indexStr))
+		{
+			return std::atoll(indexStr.c_str());
+		}
+		else
+		{
+			LOG_WAR << fname << kvPath << " return incorrect X-Consul-Index header : " << indexStr;
+		}
+	}
+	return -1;
+}
+
 void ConsulConnection::initTimer(const std::string& recoveredConsulSsnId)
 {
 	const static char fname[] = "ConsulConnection::initTimer() ";
@@ -866,27 +910,21 @@ void ConsulConnection::initTimer(const std::string& recoveredConsulSsnId)
 		);
 	}
 
-	// aply topology timer
-	this->cancleTimer(m_scheduleTimerId);
-	if (Configuration::instance()->getConsul()->m_scheduleInterval > 1)
+	// schedule timer
+	if (Configuration::instance()->getConsul()->m_scheduleInterval > 1 && m_scheduleThread == nullptr)
 	{
-		m_scheduleTimerId = this->registerTimer(
-			Configuration::instance()->getConsul()->m_scheduleInterval * 1000L, 0,
-			std::bind(&ConsulConnection::schedule, this, std::placeholders::_1),
-			__FUNCTION__
-		);
+		m_scheduleThread = std::make_unique<std::thread>(std::bind(&ConsulConnection::schedule, this));
 	}
 
-	// security sync timer
-	this->cancleTimer(m_securityTimerId);
-	if (Configuration::instance()->getConsul()->consulSecurityEnabled())
+	// topology thread
+	if (Configuration::instance()->getConsul()->m_isNode && m_topologyThread == nullptr)
 	{
-		m_securityTimerId = this->registerTimer(
-			1000L * 1,
-			Configuration::instance()->getConsul()->m_securitySyncInterval,
-			std::bind(&ConsulConnection::security, this, std::placeholders::_1),
-			__FUNCTION__
-		);
+		m_topologyThread = std::make_unique<std::thread>(std::bind(&ConsulConnection::watchTopology, this));
+	}
+	// security thread
+	if (Configuration::instance()->getConsul()->consulSecurityEnabled() && m_securityThread == nullptr)
+	{
+		m_securityThread = std::make_unique<std::thread>(std::bind(&ConsulConnection::watchSecurity, this));
 	}
 }
 
@@ -925,7 +963,22 @@ web::http::http_response ConsulConnection::requestHttp(const web::http::method& 
 	{
 		request.set_body(Utility::prettyJson(body->serialize()));
 	}
-	web::http::http_response response = client.request(request).get();
-	LOG_DBG << fname << path << " return " << response.status_code();
+	try
+	{
+		// In case of REST server crash or block query timeout, will throw exception:
+		// "Failed to read HTTP status line"
+		web::http::http_response response = client.request(request).get();
+		LOG_DBG << fname << path << " return " << response.status_code();
+		return std::move(response);
+	}
+	catch (const std::exception & ex)
+	{
+		LOG_DBG << fname << path << " got exception: " << ex.what();
+	}
+	catch (...)
+	{
+		LOG_DBG << fname << path  << " exception";
+	}
+	web::http::http_response response(web::http::status_codes::ResetContent);
 	return std::move(response);
 }

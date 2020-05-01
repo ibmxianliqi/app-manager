@@ -782,7 +782,7 @@ std::shared_ptr<Configuration::JsonConsul> Configuration::JsonConsul::FromJson(c
 	SET_JSON_INT_VALUE(jobj, JSON_KEY_CONSULE_SESSION_TTL, consul->m_ttl);
 	SET_JSON_INT_VALUE(jobj, JSON_KEY_CONSULE_REPORT_INTERVAL, consul->m_reportInterval);
 	SET_JSON_INT_VALUE(jobj, JSON_KEY_CONSULE_SCHEDULE_INTERVAL, consul->m_scheduleInterval);
-	SET_JSON_INT_VALUE(jobj, JSON_KEY_CONSUL_SECURITY_INTERVAL, consul->m_securitySyncInterval);
+	SET_JSON_BOOL_VALUE(jobj, JSON_KEY_CONSUL_SECURITY, consul->m_enableSecuritySync);
 	const static boost::regex urlExrp("(http|https)://((\\w+\\.)*\\w+)(\\:[0-9]+)?");
 	if (consul->m_consulUrl.length() && !boost::regex_match(consul->m_consulUrl, urlExrp))
 	{
@@ -801,7 +801,7 @@ web::json::value Configuration::JsonConsul::AsJson()
 	result[JSON_KEY_CONSULE_SESSION_TTL] = web::json::value::number(m_ttl);
 	result[JSON_KEY_CONSULE_REPORT_INTERVAL] = web::json::value::number(m_reportInterval);
 	result[JSON_KEY_CONSULE_SCHEDULE_INTERVAL] = web::json::value::number(m_scheduleInterval);
-	result[JSON_KEY_CONSUL_SECURITY_INTERVAL] = web::json::value::number(m_securitySyncInterval);
+	result[JSON_KEY_CONSUL_SECURITY] = web::json::value::boolean(m_enableSecuritySync);
 	return result;
 }
 
@@ -812,12 +812,12 @@ bool Configuration::JsonConsul::consulEnabled() const
 
 bool Configuration::JsonConsul::consulSecurityEnabled() const
 {
-	return !m_consulUrl.empty() && m_securitySyncInterval > 0;
+	return !m_consulUrl.empty() && m_enableSecuritySync;
 }
 
 Configuration::JsonConsul::JsonConsul()
 	:m_isMaster(false), m_isNode(false), m_ttl(CONSUL_SESSION_DEFAULT_TTL), 
 	m_reportInterval(CONSUL_REPORT_DEFAULT_INTERVAL), m_scheduleInterval(CONSUL_TOPOLOGY_DEFAULT_INTERVAL),
-	m_securitySyncInterval(CONSUL_SECURITY_SYNC_DEFAULT_INTERVAL)
+	m_enableSecuritySync(CONSUL_SECURITY_SYNC_DEFAULT)
 {
 }

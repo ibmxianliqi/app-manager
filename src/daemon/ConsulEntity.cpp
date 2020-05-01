@@ -10,7 +10,6 @@
 #include "../common/Utility.h"
 
 #define CONSUL_BASE_PATH  "/v1/kv/appmgr/"
-extern ACE_Reactor* m_timerReactor;
 
 std::shared_ptr<ConsulStatus> ConsulStatus::FromJson(const web::json::value& json)
 {
